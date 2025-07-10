@@ -1,0 +1,155 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Abderrahmane\\microjam 2025\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|C:\\Users\\Abderrahmane\\microjam 2025\\assets\\scripts\\inputmapper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\inputmapper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|C:\\Users\\Abderrahmane\\microjam 2025\\assets\\scripts\\handcachecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\handcachecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|C:\\Users\\Abderrahmane\\microjam 2025\\assets\\scripts\\gamemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gamemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|C:\\Users\\Abderrahmane\\microjam 2025\\assets\\scripts\\paperstackmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\paperstackmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|C:\\Users\\Abderrahmane\\microjam 2025\\assets\\scripts\\paperspawner.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\paperspawner.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|c:\\users\\abderrahmane\\microjam 2025\\assets\\scripts\\enums\\cache_paper_color.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\enums\\cache_paper_color.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|c:\\users\\abderrahmane\\microjam 2025\\assets\\scripts\\enums\\handanimation.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\enums\\handanimation.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|C:\\Users\\Abderrahmane\\microjam 2025\\assets\\scripts\\paper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\paper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "HandAnimation.cs",
+              "DocumentMoniker": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\Enums\\HandAnimation.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Enums\\HandAnimation.cs",
+              "ToolTip": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\Enums\\HandAnimation.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Enums\\HandAnimation.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-10T12:33:56.422Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Cache_Paper_Color.cs",
+              "DocumentMoniker": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\Enums\\Cache_Paper_Color.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Enums\\Cache_Paper_Color.cs",
+              "ToolTip": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\Enums\\Cache_Paper_Color.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Enums\\Cache_Paper_Color.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-10T12:33:49.635Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "InputMapper.cs",
+              "DocumentMoniker": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\InputMapper.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\InputMapper.cs",
+              "ToolTip": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\InputMapper.cs",
+              "RelativeToolTip": "Assets\\Scripts\\InputMapper.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-10T10:20:21.331Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "PaperSpawner.cs",
+              "DocumentMoniker": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\PaperSpawner.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\PaperSpawner.cs",
+              "ToolTip": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\PaperSpawner.cs",
+              "RelativeToolTip": "Assets\\Scripts\\PaperSpawner.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-10T09:17:17.63Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "PaperStackManager.cs",
+              "DocumentMoniker": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\PaperStackManager.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\PaperStackManager.cs",
+              "ToolTip": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\PaperStackManager.cs",
+              "RelativeToolTip": "Assets\\Scripts\\PaperStackManager.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-10T09:17:07.702Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "GameManager.cs",
+              "DocumentMoniker": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\GameManager.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\GameManager.cs",
+              "ToolTip": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\GameManager.cs",
+              "RelativeToolTip": "Assets\\Scripts\\GameManager.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-10T09:16:26.036Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "Paper.cs",
+              "DocumentMoniker": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\Paper.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Paper.cs",
+              "ToolTip": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\Paper.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Paper.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-10T09:11:00.558Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "HandCacheController.cs",
+              "DocumentMoniker": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\HandCacheController.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\HandCacheController.cs",
+              "ToolTip": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\HandCacheController.cs",
+              "RelativeToolTip": "Assets\\Scripts\\HandCacheController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACYAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-10T09:04:43.242Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
