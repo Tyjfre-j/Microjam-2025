@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 6030774952869556476}
   - component: {fileID: -4771430433047565929}
   m_Layer: 0
-  m_Name: Paper 1
+  m_Name: Red
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -29,9 +29,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9046485872497671651}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.705, y: 0.329, z: -0.756}
-  m_LocalScale: {x: 1, y: 0.01, z: 0.6}
+  m_LocalRotation: {x: -0.0000006293836, y: -0.22632147, z: -0.0000035661387, w: 0.97405267}
+  m_LocalPosition: {x: -0.826, y: 0.847, z: -0.657}
+  m_LocalScale: {x: 0.53987986, y: 0.01, z: 0.5617557}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -146,4 +146,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ec116b4c29c0604e9dac8e0fec42439, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  colorType: 2
+  colorIndex: 0
+  targetPosition: {x: 0, y: 0, z: 0}
+  targetRotation: {x: 0, y: 0, z: 0, w: 0}
+  speed: 0
+  isMoving: 1
