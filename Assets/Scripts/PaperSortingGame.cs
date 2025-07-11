@@ -32,6 +32,19 @@ public class PaperSortingGame : MonoBehaviour
     [Header("Colors")]
     public Color[] paperColors = new Color[4] { Color.red, Color.blue, Color.green, Color.yellow };
 
+    [Header("Dynamic Difficulty Settings")]
+    public float difficultyRampInterval = 15f; // Time between each difficulty increase
+    public float maxPaperSpeed = 6f;
+    public float minTimeLimit = 0.8f;
+    public float maxStampSpeed = 2f;
+    public float minShuffleDuration = 0.4f;
+
+    [Header("Animation Settings")]
+    public float stampAnimationSpeed = 1f; // Starting stamp speed
+
+    private float gameTimeElapsed = 0f;
+    private float difficultyTimer = 0f;
+
     // Key mappings: Up=Red, Down=Blue, Left=Green, Right=Yellow (initial)
     private string[] colorNames = new string[4] { "Red", "Blue", "Green", "Yellow" };
 
@@ -57,9 +70,12 @@ public class PaperSortingGame : MonoBehaviour
 
     // NEW: Scoring system
     private int score = 0;
+    private int correctCacheStreak = 0;
+    public int requiredStreakToCalm = 3; // Number of correct actions needed to reduce anger
 
     private GameObject currentStampedPaper; // Holds the paper to be destroyed by animation
     private bool waitingForStampAnimation = false;
+    private bool pendingShuffleAfterStamp = false;
 
 
     void Start()
@@ -113,14 +129,44 @@ public class PaperSortingGame : MonoBehaviour
     {
         if (gameOver || isShuffling) return;
 
+        // Track elapsed time
+        gameTimeElapsed += Time.deltaTime;
+        difficultyTimer += Time.deltaTime;
+
+        // Ramp difficulty every interval
+        if (difficultyTimer >= difficultyRampInterval)
+        {
+            difficultyTimer = 0f; // Reset timer
+            IncreaseDifficulty();
+        }
+
+
         HandleInput();
         MovePapers();
         CheckTimeLimit();
     }
+    void IncreaseDifficulty()
+    {
+        // Increase paper speed faster (more noticeable)
+        paperSpeed = Mathf.Min(paperSpeed + 0.5f, maxPaperSpeed);
+
+        // Decrease time limit more aggressively
+        timeLimit = Mathf.Max(timeLimit - 0.2f, minTimeLimit);
+
+        // Increase stamp animation speed faster
+        stampAnimationSpeed = Mathf.Min(stampAnimationSpeed + 0.25f, maxStampSpeed);
+
+        // Optional: make cachet shuffle animation faster too
+        shuffleAnimationDuration = Mathf.Max(shuffleAnimationDuration - 0.1f, minShuffleDuration);
+
+        Debug.Log($"[Difficulty Increased] PaperSpeed: {paperSpeed}, TimeLimit: {timeLimit}, StampSpeed: {stampAnimationSpeed}, Shuffle: {shuffleAnimationDuration}");
+    }
+
 
     void HandleInput()
     {
-        if (keyboard == null || !paperWaitingForInput) return;
+        if (keyboard == null || !paperWaitingForInput || waitingForStampAnimation) return;
+
 
         if (keyboard.upArrowKey.wasPressedThisFrame)
         {
@@ -171,44 +217,83 @@ public class PaperSortingGame : MonoBehaviour
 
             if (paperData.colorIndex == expectedColorIndex)
             {
-                // NEW: Increase score for correct match
+                // ✅ CORRECT
                 score++;
+                correctCacheStreak++; // Increase the streak counter
+
+                // Calm the boss if streak threshold met
+                if (correctCacheStreak >= requiredStreakToCalm)
+                {
+                    DecreaseAnger();
+                    correctCacheStreak = 0; // Reset streak after calming
+                }
+
                 Debug.Log("SUCCESS! Correct color match: " + colorNames[expectedColorIndex] + " | Score: " + score);
 
                 activePapers.Remove(targetPaper);
-                currentStampedPaper = targetPaper; // Delay destruction
+                currentStampedPaper = targetPaper;
                 paperWaitingForInput = false;
                 waitingForStampAnimation = true;
+                pendingShuffleAfterStamp = false; // No shuffle needed
             }
             else
             {
+                // ❌ WRONG
                 string keyName = GetKeyName(keyIndex);
-                Debug.Log("Wrong color! Paper is " + colorNames[paperData.colorIndex] + " but you pressed " + keyName + " (expecting " + colorNames[expectedColorIndex] + ")");
+                Debug.Log("Wrong color! Paper is " + colorNames[paperData.colorIndex] + " but you pressed " + keyName);
 
-                // Discard the paper and shuffle
+                correctCacheStreak = 0; // ❗ reset streak on error
+
                 activePapers.Remove(targetPaper);
-                Destroy(targetPaper);
+                currentStampedPaper = targetPaper; // still delay destruction
                 paperWaitingForInput = false;
-
-                IncreaseAnger("Wrong key pressed!");
-                StartCoroutine(ShuffleCachets());
+                waitingForStampAnimation = true;
+                pendingShuffleAfterStamp = true; // ❗ Mark for shuffle after stamp
             }
+
+
         }
+    }
+
+    void OnGUI()
+    {
+        GUI.Label(new Rect(10, 10, 400, 20), $"Paper Speed: {paperSpeed:F2}");
+        GUI.Label(new Rect(10, 30, 400, 20), $"Time Limit: {timeLimit:F2}");
+        GUI.Label(new Rect(10, 50, 400, 20), $"Stamp Speed: {stampAnimationSpeed:F2}");
+        GUI.Label(new Rect(10, 70, 400, 20), $"Shuffle Duration: {shuffleAnimationDuration:F2}");
     }
 
     public void OnStampHit()
     {
-        // Only destroy if a stamp animation is waiting to resolve
         if (currentStampedPaper != null)
         {
-            activePapers.Remove(currentStampedPaper);
             Destroy(currentStampedPaper);
             currentStampedPaper = null;
 
             paperWaitingForInput = false;
-            waitingForStampAnimation = false; // ✅ Allow spawning again
+            waitingForStampAnimation = false;
 
-            Debug.Log("STAMP HIT SUCCESS! Score: " + score);
+            if (pendingShuffleAfterStamp)
+            {
+                pendingShuffleAfterStamp = false;
+                IncreaseAnger("Wrong key pressed!");
+                StartCoroutine(ShuffleCachets());
+            }
+
+            Debug.Log("STAMP HIT COMPLETE! Score: " + score);
+            handAnimator.speed = 1f;
+
+
+        }
+    }
+
+    void DecreaseAnger()
+    {
+        if (angerLevel > 0)
+        {
+            angerLevel--;
+            Debug.Log("Boss is calming down... Anger Level: " + angerLevel + "/" + maxAngerLevel);
+            UpdateBossColor();
         }
     }
 
@@ -250,22 +335,25 @@ public class PaperSortingGame : MonoBehaviour
                 paperWaitingForInput = false;
                 pausedTime = 0f; // Reset paused time
                 IncreaseAnger("Time limit exceeded!");
+                correctCacheStreak = 0; // Break streak on timeout
+
             }
         }
     }
 
     void TriggerStampAnimation(int colorIndex)
     {
-        // 1. Change stamp color first (instant)
+        // 1. Change stamp color
         if (stampRenderer != null && stampMaterials != null && colorIndex >= 0 && colorIndex < stampMaterials.Length)
         {
             stampRenderer.material = stampMaterials[colorIndex];
         }
 
-        // 2. Immediately play the animation without 1-frame delay
+        // 2. Set animation speed and play
         if (handAnimator != null)
         {
-            handAnimator.Play("Stamp", 0, 0f); // Replace "Stamp" with your actual animation state name
+            handAnimator.speed = stampAnimationSpeed;
+            handAnimator.Play("Stamp", 0, 0f);
         }
     }
 
@@ -465,6 +553,7 @@ public class PaperSortingGame : MonoBehaviour
 
             if (paperData.isMoving)
             {
+                paperData.speed = paperSpeed;
                 // Move paper towards destination
                 paper.transform.position = Vector3.MoveTowards(
                     paper.transform.position,

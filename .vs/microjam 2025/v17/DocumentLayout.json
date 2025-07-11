@@ -7,6 +7,10 @@
       "RelativeMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\papersortinggame.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|c:\\users\\abderrahmane\\microjam 2025\\assets\\scripts\\stampanimationevents.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\stampanimationevents.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|C:\\Users\\Abderrahmane\\microjam 2025\\assets\\scripts\\paperdata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{16EC68BC-B624-13CD-F9CA-9E00AA2F93DA}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\paperdata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
@@ -18,20 +22,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 0,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "PaperData.cs",
-              "DocumentMoniker": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\PaperData.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\PaperData.cs",
-              "ToolTip": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\PaperData.cs",
-              "RelativeToolTip": "Assets\\Scripts\\PaperData.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAUAAAAiAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-10T23:15:54.996Z"
-            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
@@ -40,10 +32,35 @@
               "RelativeDocumentMoniker": "Assets\\Scripts\\PaperSortingGame.cs",
               "ToolTip": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\PaperSortingGame.cs",
               "RelativeToolTip": "Assets\\Scripts\\PaperSortingGame.cs",
-              "ViewState": "AgIAALUAAAAAAAAAAAASwMwAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAIQAAAAAAAAAAAAlwKMAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-07-10T23:15:21.69Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "StampAnimationEvents.cs",
+              "DocumentMoniker": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\StampAnimationEvents.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\StampAnimationEvents.cs",
+              "ToolTip": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\StampAnimationEvents.cs",
+              "RelativeToolTip": "Assets\\Scripts\\StampAnimationEvents.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-11T11:51:19.501Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "PaperData.cs",
+              "DocumentMoniker": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\PaperData.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\PaperData.cs",
+              "ToolTip": "C:\\Users\\Abderrahmane\\microjam 2025\\Assets\\Scripts\\PaperData.cs",
+              "RelativeToolTip": "Assets\\Scripts\\PaperData.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAUAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-10T23:15:54.996Z"
             }
           ]
         }

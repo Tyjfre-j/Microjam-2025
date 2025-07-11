@@ -1780,6 +1780,13 @@ MonoBehaviour:
   - {r: 0, g: 0, b: 1, a: 1}
   - {r: 0, g: 1, b: 0, a: 1}
   - {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  difficultyRampInterval: 5
+  maxPaperSpeed: 6
+  minTimeLimit: 0.8
+  maxStampSpeed: 6
+  minShuffleDuration: 0.4
+  stampAnimationSpeed: 1
+  requiredStreakToCalm: 3
 --- !u!4 &1883976686
 Transform:
   m_ObjectHideFlags: 0
