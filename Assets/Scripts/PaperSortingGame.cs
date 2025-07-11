@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -16,7 +16,12 @@ public class PaperSortingGame : MonoBehaviour
 
     [Header("Boss Anger Indicator")]
     public GameObject bossCylinder; // The boss cylinder object
-    public Color[] angerColors = new Color[4] { Color.green, Color.yellow, Color.red, Color.black }; // 0-4 anger levels
+    public Color[] angerColors = new Color[4] { Color.green, Color.yellow, Color.red, Color.black }; // 0-4 anger levels 
+
+    [Header("Hand Animation")]
+    public Animator handAnimator;
+    public Renderer stampRenderer; // Assign the stamp model inside the hand
+    public Material[] stampMaterials = new Material[4]; // 0 = Red, 1 = Blue, etc.
 
     [Header("Game Settings")]
     public float paperSpeed = 2f;
@@ -53,6 +58,10 @@ public class PaperSortingGame : MonoBehaviour
     // NEW: Scoring system
     private int score = 0;
 
+    private GameObject currentStampedPaper; // Holds the paper to be destroyed by animation
+    private bool waitingForStampAnimation = false;
+
+
     void Start()
     {
         keyboard = Keyboard.current;
@@ -68,7 +77,7 @@ public class PaperSortingGame : MonoBehaviour
         while (true)
         {
             // Only spawn if there are no active papers, game is not over, and not shuffling
-            if (activePapers.Count == 0 && !gameOver && !isShuffling)
+            if (activePapers.Count == 0 && !gameOver && !isShuffling && !waitingForStampAnimation)
             {
                 SpawnPaper();
             }
@@ -113,22 +122,25 @@ public class PaperSortingGame : MonoBehaviour
     {
         if (keyboard == null || !paperWaitingForInput) return;
 
-        // Check for arrow key presses
         if (keyboard.upArrowKey.wasPressedThisFrame)
         {
-            CheckPaperMatch(0); // Up key
+            TriggerStampAnimation(0); // Red
+            CheckPaperMatch(0);
         }
         else if (keyboard.downArrowKey.wasPressedThisFrame)
         {
-            CheckPaperMatch(1); // Down key
+            TriggerStampAnimation(1); // Blue
+            CheckPaperMatch(1);
         }
         else if (keyboard.leftArrowKey.wasPressedThisFrame)
         {
-            CheckPaperMatch(2); // Left key
+            TriggerStampAnimation(2); // Green
+            CheckPaperMatch(2);
         }
         else if (keyboard.rightArrowKey.wasPressedThisFrame)
         {
-            CheckPaperMatch(3); // Right key
+            TriggerStampAnimation(3); // Yellow
+            CheckPaperMatch(3);
         }
     }
 
@@ -164,8 +176,9 @@ public class PaperSortingGame : MonoBehaviour
                 Debug.Log("SUCCESS! Correct color match: " + colorNames[expectedColorIndex] + " | Score: " + score);
 
                 activePapers.Remove(targetPaper);
-                Destroy(targetPaper);
+                currentStampedPaper = targetPaper; // Delay destruction
                 paperWaitingForInput = false;
+                waitingForStampAnimation = true;
             }
             else
             {
@@ -182,6 +195,25 @@ public class PaperSortingGame : MonoBehaviour
             }
         }
     }
+
+    public void OnStampHit()
+    {
+        // Only destroy if a stamp animation is waiting to resolve
+        if (currentStampedPaper != null)
+        {
+            activePapers.Remove(currentStampedPaper);
+            Destroy(currentStampedPaper);
+            currentStampedPaper = null;
+
+            paperWaitingForInput = false;
+            waitingForStampAnimation = false; // ✅ Allow spawning again
+
+            Debug.Log("STAMP HIT SUCCESS! Score: " + score);
+        }
+    }
+
+
+
 
     void CheckTimeLimit()
     {
@@ -219,6 +251,21 @@ public class PaperSortingGame : MonoBehaviour
                 pausedTime = 0f; // Reset paused time
                 IncreaseAnger("Time limit exceeded!");
             }
+        }
+    }
+
+    void TriggerStampAnimation(int colorIndex)
+    {
+        // 1. Change stamp color first (instant)
+        if (stampRenderer != null && stampMaterials != null && colorIndex >= 0 && colorIndex < stampMaterials.Length)
+        {
+            stampRenderer.material = stampMaterials[colorIndex];
+        }
+
+        // 2. Immediately play the animation without 1-frame delay
+        if (handAnimator != null)
+        {
+            handAnimator.Play("Stamp", 0, 0f); // Replace "Stamp" with your actual animation state name
         }
     }
 
@@ -429,7 +476,7 @@ public class PaperSortingGame : MonoBehaviour
                 paper.transform.rotation = Quaternion.RotateTowards(
     paper.transform.rotation,
     paperData.targetRotation,
-                 360 * Time.deltaTime // Degrees per second � adjust for smoothness
+                 360 * Time.deltaTime // Degrees per second — adjust for smoothness
 );
 
                 // Check if paper reached destination

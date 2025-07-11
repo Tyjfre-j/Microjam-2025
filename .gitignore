@@ -13,3 +13,5 @@ obj/
 *.svd
 .vscode/
 .DS_Store
+# Ignore Visual Studio temporary files
+.vs/
