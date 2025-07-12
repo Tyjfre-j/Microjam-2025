@@ -2,506 +2,384 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine;
-using UnityEngine.InputSystem; // 👈 required for new input system
-
 
 public class PaperSortingGame : MonoBehaviour
 {
-    /* -------------------------------------------------
-       INSPECTOR FIELDS
-       -------------------------------------------------*/
     [Header("Assign These in Inspector")]
-    public GameObject[] paperPrefabs = new GameObject[4];          // 4 paper prefabs (couleurs)
-    public Transform   paperSpawnPoint;
-    public Transform   paperDestination;
-
+    public GameObject[] paperPrefabs = new GameObject[4]; // Array for 4 different paper prefabs
+    public Transform paperSpawnPoint;
+    public Transform paperDestination;
+    public UIManager uiManager;
     [Header("Desk Cachet Objects")]
-    public GameObject[] cachetObjects   = new GameObject[4];       // Cachets physiques
-    public Transform[]  cachetPositions = new Transform[4];        // Positions de base sur le bureau
+    public GameObject[] cachetObjects = new GameObject[4]; // The actual cachet1, cachet2, cachet3, cachet4 GameObjects in the scene
+    public Transform[] cachetPositions = new Transform[4]; // Original positions on desk
 
     [Header("Boss Anger Indicator")]
-    public GameObject bossCylinder;
-    public Color[]    angerColors = new Color[4]
-    { Color.green, Color.yellow, Color.red, Color.black };         // 0‑4 niveaux de colère
+    public GameObject bossCylinder; // The boss cylinder object
+    public Color[] angerColors = new Color[4] { Color.green, Color.yellow, Color.red, Color.black }; // 0-4 anger levels 
 
     [Header("Hand Animation")]
-    public Animator  handAnimator;
-    public Renderer  stampRenderer;                                // Renderer du tampon
-    public Material[] stampMaterials = new Material[4];            // Matériaux du tampon
+    public Animator handAnimator;
+    public Renderer stampRenderer; // Assign the stamp model inside the hand
+    public Material[] stampMaterials = new Material[4]; // 0 = Red, 1 = Blue, etc.
 
     [Header("Game Settings")]
-    public float paperSpeed              = 2f;
-    public float spawnInterval           = 2f;
-    public float timeLimit               = 2f;                     // Temps de réaction du joueur
-    public float shuffleAnimationDuration= 1f;                     // Durée du mélange
+    public float paperSpeed = 2f;
+    public float spawnInterval = 2f;
+    public float timeLimit = 2f; // Time limit for player to respond
+    public float shuffleAnimationDuration = 1f; // How long the shuffle animation takes
 
     [Header("Colors")]
-    public Color[] paperColors = new Color[4]
-    { Color.red, Color.blue, Color.green, Color.yellow };
+    public Color[] paperColors = new Color[4] { Color.red, Color.blue, Color.green, Color.yellow };
 
     [Header("Dynamic Difficulty Settings")]
-    public float difficultyRampInterval = 15f;
-    public float maxPaperSpeed          = 6f;
-    public float minTimeLimit           = 0.8f;
-    public float maxStampSpeed          = 2f;
-    public float minShuffleDuration     = 0.4f;
+    public float difficultyRampInterval = 15f; // Time between each difficulty increase
+    public float maxPaperSpeed = 6f;
+    public float minTimeLimit = 0.8f;
+    public float maxStampSpeed = 2f;
+    public float minShuffleDuration = 0.4f;
+
+    [Header("Shuffle Settings")]
+    public int correctCatchesBeforeShuffle = 5; // Shuffle every 5 correct catches
 
     [Header("Animation Settings")]
-    public float    stampAnimationSpeed = 1f;
+    public float stampAnimationSpeed = 1f; // Starting stamp speed
     public Animator BossAnimator;
 
-    /* -------------------------------------------------
-       PRIVATE STATE
-       -------------------------------------------------*/
-    private float  gameTimeElapsed = 0f;
-    private float  difficultyTimer = 0f;
-    private bool   isBossAnimating = false;
+    private float gameTimeElapsed = 0f;
+    private float difficultyTimer = 0f;
+    private bool isBossAnimating = false;
+    private int correctSinceLastShuffle = 0;
 
-    // Mapping des touches : Up=0(Red), Down=1(Blue), Left=2(Green), Right=3(Yellow)
-    private readonly string[] colorNames     = { "Red", "Blue", "Green", "Yellow" };
-    private          int[]    currentMapping = { 0, 1, 2, 3 };
+    private bool shuffleAfterStamp = false;
+
+    // Key mappings: Up=Red, Down=Blue, Left=Green, Right=Yellow (initial)
+    private string[] colorNames = new string[4] { "Red", "Blue", "Green", "Yellow" };
+
+    // Current mapping after shuffles - indices correspond to Up, Down, Left, Right keys
+    private int[] currentMapping = new int[4] { 0, 1, 2, 3 }; // Initially: Up=0(Red), Down=1(Blue), Left=2(Green), Right=3(Yellow)
 
     private List<GameObject> activePapers = new List<GameObject>();
 
-    // Input System
+    // Input System references
     private Keyboard keyboard;
 
-    // Anger / score / états
-    private int   angerLevel   = 0;
+    // Anger system
+    private int angerLevel = 0;
     private const int maxAngerLevel = 4;
     private float paperReachedTime = 0f;
-    private bool  paperWaitingForInput = false;
-    private bool  gameOver     = false;
-    private bool  isShuffling  = false;
-    private bool  waitingForStampAnimation = false;
+    private bool paperWaitingForInput = false;
+    private bool gameOver = false;
+    private bool isShuffling = false; // Prevent input during shuffle animation
 
-    // Timer pause (pendant shuffle)
-    private bool  timerPaused = false;
-    private float pausedTime  = 0f;
+    // NEW: Timer pause system
+    private bool timerPaused = false;
+    private float pausedTime = 0f; // Time accumulated while paused
 
-    // Scoring
+    // NEW: Scoring system
     private int score = 0;
     private int correctCacheStreak = 0;
-    public  int requiredStreakToCalm = 3;
+    public int requiredStreakToCalm = 3; // Number of correct actions needed to reduce anger
 
-    private GameObject currentStampedPaper;
+    private GameObject currentStampedPaper; // Holds the paper to be destroyed by animation
+    private bool waitingForStampAnimation = false;
 
-    /* -------------------------------------------------
-       UNITY LIFECYCLE
-       -------------------------------------------------*/
+
+
     void Start()
     {
         keyboard = Keyboard.current;
         UpdateBossColor();
         StartCoroutine(SpawnPapers());
 
+        // NEW: Display initial score
         Debug.Log("Score: " + score);
+    }
+
+    IEnumerator SpawnPapers()
+    {
+        while (true)
+        {
+            // Only spawn if there are no active papers, game is not over, and not shuffling
+            if (activePapers.Count == 0 && !gameOver && !isShuffling && !waitingForStampAnimation && !isBossAnimating)
+            {
+                SpawnPaper();
+            }
+            yield return new WaitForSeconds(0.1f); // Check every 0.1 seconds
+        }
+    }
+
+    void SpawnPaper()
+    {
+        // Choose random paper prefab
+        int colorIndex = Random.Range(0, paperPrefabs.Length);
+        GameObject newPaper = Instantiate(paperPrefabs[colorIndex], paperSpawnPoint.position, Quaternion.identity);
+
+        // Disable physics during movement
+        Rigidbody rb = newPaper.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+        }
+
+        // Set paper data (no need to change color since prefab already has it)
+        PaperData paperData = newPaper.GetComponent<PaperData>();
+        paperData.colorIndex = colorIndex;
+        paperData.targetRotation = paperDestination.rotation;
+        paperData.targetPosition = paperDestination.position;
+        paperData.speed = paperSpeed;
+        paperData.isMoving = true;
+
+        activePapers.Add(newPaper);
     }
 
     void Update()
     {
-        // Si le GameManager existe et a mis le jeu en pause ⇒ on sort
-        if (GameManager.Instance != null && !GameManager.Instance.isGameActive)
-            return;
+        if (gameOver || isShuffling) return;
 
-        if (gameOver || isShuffling)
-            return;
-
+        // Track elapsed time
         gameTimeElapsed += Time.deltaTime;
         difficultyTimer += Time.deltaTime;
 
+        // Ramp difficulty every interval
         if (difficultyTimer >= difficultyRampInterval)
         {
-            difficultyTimer = 0f;
+            difficultyTimer = 0f; // Reset timer
             IncreaseDifficulty();
         }
+
 
         HandleInput();
         MovePapers();
         CheckTimeLimit();
     }
-
-    /* -------------------------------------------------
-       PUBLIC API
-       -------------------------------------------------*/
-
-    /// <summary>Remet le jeu à zéro (appelable depuis UI/menu).</summary>
-    public void ResetGame()
+    void IncreaseDifficulty()
     {
-        // Réinitialiser les flags / états
-        gameOver                = false;
-        isShuffling             = false;
-        isBossAnimating         = false;
-        paperWaitingForInput    = false;
-        waitingForStampAnimation= false;
-        timerPaused             = false;
+        // Increase paper speed faster (more noticeable)
+        paperSpeed = Mathf.Min(paperSpeed + 0.5f, maxPaperSpeed);
 
-        // Paramètres de difficulté (valeurs de départ)
-        paperSpeed              = 2f;
-        timeLimit               = 2f;
-        stampAnimationSpeed     = 1f;
-        shuffleAnimationDuration= 1f;
+        // Decrease time limit more aggressively
+        timeLimit = Mathf.Max(timeLimit - 0.2f, minTimeLimit);
 
-        // Score / colère
-        angerLevel          = 0;
-        score               = 0;
-        correctCacheStreak  = 0;
-        gameTimeElapsed     = 0f;
-        difficultyTimer     = 0f;
-        pausedTime          = 0f;
+        // Increase stamp animation speed faster
+        stampAnimationSpeed = Mathf.Min(stampAnimationSpeed + 0.25f, maxStampSpeed);
 
-        // Mapping par défaut
-        currentMapping = new int[4] { 0, 1, 2, 3 };
+        // Optional: make cachet shuffle animation faster too
+        shuffleAnimationDuration = Mathf.Max(shuffleAnimationDuration - 0.1f, minShuffleDuration);
 
-        // Détruire les papiers restants
-        foreach (GameObject paper in activePapers)
-            if (paper != null) Destroy(paper);
-        activePapers.Clear();
-
-        // Replacer les cachets
-        ResetCachetPositions();
-
-        // UI / GameManager
-        UpdateBossColor();
-
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.UpdateScore(score);
-            GameManager.Instance.UpdateAngerLevel(angerLevel, maxAngerLevel);
-        }
-
-        Debug.Log("Game Reset Complete");
+        Debug.Log($"[Difficulty Increased] PaperSpeed: {paperSpeed}, TimeLimit: {timeLimit}, StampSpeed: {stampAnimationSpeed}, Shuffle: {shuffleAnimationDuration}");
     }
 
-    /// <summary>Renvoie le score courant.</summary>
-    public int GetScore() => score;
 
-    /// <summary>Réinitialise uniquement le score (optionnel).</summary>
-    public void ResetScore()
-    {
-        score = 0;
-        Debug.Log("Score reset to: " + score);
-
-        if (GameManager.Instance != null)
-            GameManager.Instance.UpdateScore(score);
-    }
-
-    /* -------------------------------------------------
-       COROUTINES
-       -------------------------------------------------*/
-    IEnumerator SpawnPapers()
-    {
-        while (true)
-        {
-            if (activePapers.Count == 0 && !gameOver && !isShuffling && !waitingForStampAnimation)
-                SpawnPaper();
-
-            yield return new WaitForSeconds(0.1f);
-        }
-    }
-
-    IEnumerator ShuffleCachets()
-    {
-        isShuffling = true;
-        PauseTimer();
-
-        Debug.Log("Shuffling cachet positions…");
-
-        /* 1. Enregistrer positions initiales */
-        Vector3[] originalPositions = new Vector3[4];
-        for (int i = 0; i < 4; i++)
-            originalPositions[i] = cachetObjects[i].transform.position;
-
-        /* 2. Générer une nouvelle permutation (Fisher‑Yates) */
-        int[] newMapping = { 0, 1, 2, 3 };
-        for (int i = 0; i < newMapping.Length; i++)
-        {
-            int r = Random.Range(i, newMapping.Length);
-            (newMapping[i], newMapping[r]) = (newMapping[r], newMapping[i]);
-        }
-
-        /* 3. Calculer les positions cibles */
-        Vector3[] targetPositions = new Vector3[4];
-        for (int keyIndex = 0; keyIndex < 4; keyIndex++)
-        {
-            int colorIndex       = newMapping[keyIndex];
-            targetPositions[colorIndex] = cachetPositions[keyIndex].position;
-        }
-
-        /* 4. Animation */
-        float t = 0f;
-        while (t < shuffleAnimationDuration)
-        {
-            t += Time.deltaTime;
-            float lerp = Mathf.SmoothStep(0f, 1f, t / shuffleAnimationDuration);
-            for (int i = 0; i < 4; i++)
-                cachetObjects[i].transform.position = Vector3.Lerp(originalPositions[i], targetPositions[i], lerp);
-
-            yield return null;
-        }
-        for (int i = 0; i < 4; i++)
-            cachetObjects[i].transform.position = targetPositions[i];
-
-        currentMapping = newMapping;
-
-        Debug.Log($"New mapping – Up:{colorNames[currentMapping[0]]}, Down:{colorNames[currentMapping[1]]}, Left:{colorNames[currentMapping[2]]}, Right:{colorNames[currentMapping[3]]}");
-
-        ResumeTimer();
-        isShuffling = false;
-    }
-
-    IEnumerator WaitForBossAnimationThenShuffle()
-    {
-        isBossAnimating = true;
-
-        if (BossAnimator != null)
-        {
-            string state = $"Anger{angerLevel}";
-            BossAnimator.SetTrigger(state);
-            yield return null;
-
-            while (!BossAnimator.GetCurrentAnimatorStateInfo(0).IsName(state))
-                yield return null;
-
-            yield return new WaitForSeconds(BossAnimator.GetCurrentAnimatorStateInfo(0).length);
-        }
-
-        isBossAnimating = false;
-        yield return StartCoroutine(ShuffleCachets());
-    }
-
-    /* -------------------------------------------------
-       INPUT / LOGIC
-       -------------------------------------------------*/
     void HandleInput()
     {
-        if (keyboard == null || !paperWaitingForInput || waitingForStampAnimation || isShuffling || isBossAnimating)
-            return;
+        if (keyboard == null || !paperWaitingForInput || waitingForStampAnimation || isShuffling || isBossAnimating) return;
 
-        if      (keyboard.upArrowKey.wasPressedThisFrame)    { TriggerStampAnimation(0); CheckPaperMatch(0); }
-        else if (keyboard.downArrowKey.wasPressedThisFrame)  { TriggerStampAnimation(1); CheckPaperMatch(1); }
-        else if (keyboard.leftArrowKey.wasPressedThisFrame)  { TriggerStampAnimation(2); CheckPaperMatch(2); }
-        else if (keyboard.rightArrowKey.wasPressedThisFrame) { TriggerStampAnimation(3); CheckPaperMatch(3); }
+
+
+        if (keyboard.upArrowKey.wasPressedThisFrame)
+        {
+            TriggerStampAnimation(0); // Red
+            CheckPaperMatch(0);
+        }
+        else if (keyboard.downArrowKey.wasPressedThisFrame)
+        {
+            TriggerStampAnimation(1); // Blue
+            CheckPaperMatch(1);
+        }
+        else if (keyboard.leftArrowKey.wasPressedThisFrame)
+        {
+            TriggerStampAnimation(2); // Green
+            CheckPaperMatch(2);
+        }
+        else if (keyboard.rightArrowKey.wasPressedThisFrame)
+        {
+            TriggerStampAnimation(3); // Yellow
+            CheckPaperMatch(3);
+        }
     }
 
     void CheckPaperMatch(int keyIndex)
     {
+        // Find papers that have reached the destination and are not moving
         GameObject targetPaper = null;
+
         foreach (GameObject paper in activePapers)
         {
-            if (paper == null) continue;
-            PaperData pd = paper.GetComponent<PaperData>();
-            if (!pd.isMoving) { targetPaper = paper; break; }
-        }
-        if (targetPaper == null) return;
-
-        PaperData data = targetPaper.GetComponent<PaperData>();
-        int expected   = currentMapping[keyIndex];
-
-        if (data.colorIndex == expected)
-        {
-            /* ---------- CORRECT ---------- */
-            score++;
-            correctCacheStreak++;
-
-            if (GameManager.Instance != null)
-                GameManager.Instance.UpdateScore(score);
-
-            if (correctCacheStreak >= requiredStreakToCalm)
+            if (paper != null)
             {
-                DecreaseAnger();
-                correctCacheStreak = 0;
-            }
+                PaperData paperData = paper.GetComponent<PaperData>();
 
-            Debug.Log($"SUCCESS! {colorNames[expected]} | Score: {score}");
-        }
-        else
-        {
-            /* ---------- WRONG ---------- */
-            Debug.Log($"Wrong color! Paper:{colorNames[data.colorIndex]} vs Key:{GetKeyName(keyIndex)}");
-            correctCacheStreak = 0;
-
-            if (GameManager.Instance != null)
-                GameManager.Instance.UpdateScore(score);          // score inchangé mais notification éventuelle
-
-            IncreaseAnger("Wrong key pressed!");
-            StartCoroutine(WaitForBossAnimationThenShuffle());
-        }
-
-        activePapers.Remove(targetPaper);
-        currentStampedPaper   = targetPaper;
-        paperWaitingForInput  = false;
-        waitingForStampAnimation = true;
-    }
-
-    void MovePapers()
-    {
-        for (int i = activePapers.Count - 1; i >= 0; i--)
-        {
-            if (activePapers[i] == null) { activePapers.RemoveAt(i); continue; }
-
-            GameObject paper = activePapers[i];
-            PaperData  pd    = paper.GetComponent<PaperData>();
-
-            if (pd.isMoving)
-            {
-                pd.speed = paperSpeed;
-
-                paper.transform.position = Vector3.MoveTowards(
-                    paper.transform.position, pd.targetPosition, pd.speed * Time.deltaTime);
-                paper.transform.rotation = Quaternion.RotateTowards(
-                    paper.transform.rotation, pd.targetRotation, 360f * Time.deltaTime);
-
-                if (Vector3.Distance(paper.transform.position, pd.targetPosition) < 0.1f)
+                // Only check papers that have reached the destination
+                if (!paperData.isMoving)
                 {
-                    pd.isMoving = false;
-                    paperWaitingForInput = true;
-                    paperReachedTime     = Time.time;
-                    pausedTime           = 0f;
-
-                    Debug.Log($"Paper reached – Up:{colorNames[currentMapping[0]]}, Down:{colorNames[currentMapping[1]]}, Left:{colorNames[currentMapping[2]]}, Right:{colorNames[currentMapping[3]]}");
-
-                    Rigidbody rb = paper.GetComponent<Rigidbody>();
-                    if (rb != null) rb.isKinematic = false;
+                    targetPaper = paper;
+                    break; // Take the first one that reached destination
                 }
             }
         }
-    }
 
-    /* -------------------------------------------------
-       TIME / DIFFICULTY
-       -------------------------------------------------*/
-    void IncreaseDifficulty()
-    {
-        paperSpeed          = Mathf.Min(paperSpeed + 0.5f, maxPaperSpeed);
-        timeLimit           = Mathf.Max(timeLimit - 0.2f, minTimeLimit);
-        stampAnimationSpeed = Mathf.Min(stampAnimationSpeed + 0.25f, maxStampSpeed);
-        shuffleAnimationDuration = Mathf.Max(shuffleAnimationDuration - 0.1f, minShuffleDuration);
-
-        Debug.Log($"[Difficulty+] Speed:{paperSpeed} Time:{timeLimit} StampSpd:{stampAnimationSpeed} Shuffle:{shuffleAnimationDuration}");
-    }
-
-    void CheckTimeLimit()
-    {
-        if (!paperWaitingForInput || timerPaused) return;
-
-        float elapsed = Time.time - paperReachedTime - pausedTime;
-        float remaining = timeLimit - elapsed;
-
-        // UI – afficher temps restant
-        if (GameManager.Instance?.uiManager != null)
-            GameManager.Instance.uiManager.UpdateTime(Mathf.Max(0f, remaining));
-
-        if (elapsed <= timeLimit) return;
-
-        Debug.Log("Time limit exceeded! Paper discarded.");
-
-        GameObject target = null;
-        foreach (GameObject paper in activePapers)
+        if (targetPaper != null)
         {
-            if (paper == null) continue;
-            if (!paper.GetComponent<PaperData>().isMoving)
-            { target = paper; break; }
+            PaperData paperData = targetPaper.GetComponent<PaperData>();
+            int expectedColorIndex = currentMapping[keyIndex]; // What color this key should match
+
+            if (paperData.colorIndex == expectedColorIndex)
+            {
+                //  CORRECT
+                score++;
+                correctCacheStreak++; // Increase the streak counter
+                uiManager.UpdateScore(score); // Update UI score display
+                correctSinceLastShuffle++;
+
+                // Calm the boss if streak threshold met
+                if (correctCacheStreak >= requiredStreakToCalm)
+                {
+                    DecreaseAnger();
+                    correctCacheStreak = 0; // Reset streak after calming
+                }
+                if (correctSinceLastShuffle >= correctCatchesBeforeShuffle)
+                {
+                    correctSinceLastShuffle = 0;
+                    shuffleAfterStamp = true;
+                }
+
+
+                Debug.Log("SUCCESS! Correct color match: " + colorNames[expectedColorIndex] + " | Score: " + score);
+
+                activePapers.Remove(targetPaper);
+                currentStampedPaper = targetPaper;
+                paperWaitingForInput = false;
+                waitingForStampAnimation = true;
+
+            }
+            else
+            {
+                // WRONG
+                string keyName = GetKeyName(keyIndex);
+                Debug.Log("Wrong color! Paper is " + colorNames[paperData.colorIndex] + " but you pressed " + keyName);
+
+                correctCacheStreak = 0;
+
+                activePapers.Remove(targetPaper);
+                currentStampedPaper = targetPaper;
+                paperWaitingForInput = false;
+                waitingForStampAnimation = true;
+
+                //  Trigger boss animation now and wait for it before shuffle
+                IncreaseAnger("Wrong key pressed!");
+                StartCoroutine(WaitForBossAnimationThenShuffleAndSpawn());
+
+
+            }
+
+
         }
-
-        if (target != null)
-        {
-            activePapers.Remove(target);
-            Destroy(target);
-        }
-
-        paperWaitingForInput = false;
-        pausedTime           = 0f;
-
-        if (GameManager.Instance != null)
-            GameManager.Instance.UpdateScore(score);
-
-        IncreaseAnger("Time limit exceeded!");
-        correctCacheStreak = 0;
     }
 
-    /* -------------------------------------------------
-       ANGER SYSTEM
-       -------------------------------------------------*/
-    void IncreaseAnger(string reason)
+    void OnGUI()
     {
-        angerLevel = Mathf.Clamp(angerLevel + 1, 0, maxAngerLevel);
-        Debug.Log($"{reason} Anger:{angerLevel}/{maxAngerLevel}");
-
-        if (GameManager.Instance != null)
-            GameManager.Instance.UpdateAngerLevel(angerLevel, maxAngerLevel);
-
-        if (BossAnimator != null)
-            BossAnimator.SetTrigger($"Anger{angerLevel}");
-
-        UpdateBossColor();
-
-        if (angerLevel >= maxAngerLevel)
-            GameOver();
+        GUI.Label(new Rect(10, 10, 400, 20), $"Paper Speed: {paperSpeed:F2}");
+        GUI.Label(new Rect(10, 30, 400, 20), $"Time Limit: {timeLimit:F2}");
+        GUI.Label(new Rect(10, 50, 400, 20), $"Stamp Speed: {stampAnimationSpeed:F2}");
+        GUI.Label(new Rect(10, 70, 400, 20), $"Shuffle Duration: {shuffleAnimationDuration:F2}");
     }
 
-    void DecreaseAnger()
-    {
-        if (angerLevel <= 0) return;
-
-        angerLevel--;
-        Debug.Log($"Boss calming… Anger:{angerLevel}/{maxAngerLevel}");
-
-        if (GameManager.Instance != null)
-            GameManager.Instance.UpdateAngerLevel(angerLevel, maxAngerLevel);
-
-        UpdateBossColor();
-    }
-
-    void UpdateBossColor()
-    {
-        if (bossCylinder == null) return;
-
-        Renderer r = bossCylinder.GetComponent<Renderer>();
-        if (r != null && angerLevel >= 0 && angerLevel < angerColors.Length)
-            r.material.color = angerColors[angerLevel];
-    }
-
-    /* -------------------------------------------------
-       GAME OVER
-       -------------------------------------------------*/
-    void GameOver()
-    {
-        gameOver = true;
-        Debug.Log($"GAME OVER! Max anger. Final Score:{score}");
-
-        foreach (GameObject p in activePapers)
-            if (p != null) Destroy(p);
-        activePapers.Clear();
-
-        if (GameManager.Instance != null)
-            GameManager.Instance.GameOver();
-    }
-
-    /* -------------------------------------------------
-       ANIMATION HOOKS
-       -------------------------------------------------*/
-    public void OnStampHit()      // Appel via AnimationEvent
+    public void OnStampHit()
     {
         if (currentStampedPaper != null)
         {
             Destroy(currentStampedPaper);
             currentStampedPaper = null;
 
-            paperWaitingForInput    = false;
-            waitingForStampAnimation= false;
-            handAnimator.speed      = 1f;
+            paperWaitingForInput = false;
+            waitingForStampAnimation = false;
 
-            Debug.Log($"STAMP HIT COMPLETE! Score:{score}");
+            if (shuffleAfterStamp)
+            {
+                shuffleAfterStamp = false;
+                StartCoroutine(ShuffleCachets());
+            }
+
+
+            Debug.Log("STAMP HIT COMPLETE! Score: " + score);
+            handAnimator.speed = 1f;
+
+
+        }
+    }
+
+    void DecreaseAnger()
+    {
+        if (angerLevel > 0)
+        {
+            angerLevel--;
+            Debug.Log("Boss is calming down... Anger Level: " + angerLevel + "/" + maxAngerLevel);
+            UpdateBossColor();
+            uiManager.UpdateAngerBar(angerLevel, maxAngerLevel); // Update UI anger level display
+        }
+    }
+
+
+
+
+    void CheckTimeLimit()
+    {
+        //  Don't check time limit if timer is paused
+        if (paperWaitingForInput && !timerPaused)
+        {
+            float elapsedTime = Time.time - paperReachedTime - pausedTime;
+            uiManager.UpdateTime( timeLimit - elapsedTime); 
+
+            if (elapsedTime > timeLimit)
+            {
+                Debug.Log("Time limit exceeded! Paper discarded.");
+
+                // Find and discard the paper
+                GameObject targetPaper = null;
+                foreach (GameObject paper in activePapers)
+                {
+                    if (paper != null)
+                    {
+                        PaperData paperData = paper.GetComponent<PaperData>();
+                        if (!paperData.isMoving)
+                        {
+                            targetPaper = paper;
+                            break;
+                        }
+                    }
+                }
+
+                if (targetPaper != null)
+                {
+                    activePapers.Remove(targetPaper);
+                    Destroy(targetPaper);
+                }
+
+                paperWaitingForInput = false;
+                pausedTime = 0f; // Reset paused time
+                IncreaseAnger("Time limit exceeded!");
+                correctCacheStreak = 0; // Break streak on timeout
+
+            }
         }
     }
 
     void TriggerStampAnimation(int colorIndex)
     {
-        if (stampRenderer != null && colorIndex >= 0 && colorIndex < stampMaterials.Length)
-            stampRenderer.material = stampMaterials[colorIndex];
+        // 1. Change stamp color
+        if (stampRenderer != null && stampMaterials != null && colorIndex >= 0 && colorIndex < stampMaterials.Length)
+        {
+            Material[] mats = stampRenderer.materials;
 
+        // Change only the colored part — assume it's the second material (index 1)
+        mats[1] = stampMaterials[colorIndex];
+
+        // Apply the updated array
+        stampRenderer.materials = mats;
+        }
+
+        // 2. Set animation speed and play
         if (handAnimator != null)
         {
             handAnimator.speed = stampAnimationSpeed;
@@ -509,33 +387,90 @@ public class PaperSortingGame : MonoBehaviour
         }
     }
 
-    /* -------------------------------------------------
-       HELPERS
-       -------------------------------------------------*/
-    void SpawnPaper()
+    IEnumerator ShuffleCachets()
     {
-        int colorIndex = Random.Range(0, paperPrefabs.Length);
-        GameObject paper = Instantiate(paperPrefabs[colorIndex], paperSpawnPoint.position, Quaternion.identity);
+        isShuffling = true;
 
-        Rigidbody rb = paper.GetComponent<Rigidbody>();
-        if (rb != null) rb.isKinematic = true;
+        // NEW: Pause the timer during shuffle
+        PauseTimer();
 
-        PaperData pd   = paper.GetComponent<PaperData>();
-        pd.colorIndex  = colorIndex;
-        pd.targetRotation = paperDestination.rotation;
-        pd.targetPosition = paperDestination.position;
-        pd.speed          = paperSpeed;
-        pd.isMoving       = true;
+        Debug.Log("Shuffling cachet positions...");
 
-        activePapers.Add(paper);
+        // Store original positions
+        Vector3[] originalPositions = new Vector3[4];
+        for (int i = 0; i < 4; i++)
+        {
+            originalPositions[i] = cachetObjects[i].transform.position;
+        }
+
+        // Create new random mapping using Fisher-Yates shuffle
+        int[] newMapping = new int[4] { 0, 1, 2, 3 };
+
+        // Shuffle the array to create a new random mapping
+        for (int i = 0; i < newMapping.Length; i++)
+        {
+            int randomIndex = Random.Range(i, newMapping.Length);
+            int temp = newMapping[i];
+            newMapping[i] = newMapping[randomIndex];
+            newMapping[randomIndex] = temp;
+        }
+
+        // Animate the shuffle
+        float elapsedTime = 0f;
+        Vector3[] targetPositions = new Vector3[4];
+
+        // Calculate target positions:
+        // newMapping[keyIndex] tells us which color should be at which key position
+        // We need to move each cachet object to its new position
+        for (int keyIndex = 0; keyIndex < 4; keyIndex++)
+        {
+            int colorIndex = newMapping[keyIndex]; // Which color should be at this key position
+            targetPositions[colorIndex] = cachetPositions[keyIndex].position; // Move that color's cachet to this position
+        }
+
+        // Animate movement
+        while (elapsedTime < shuffleAnimationDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / shuffleAnimationDuration;
+            t = Mathf.SmoothStep(0f, 1f, t); // Smooth animation curve
+
+            for (int i = 0; i < 4; i++)
+            {
+                cachetObjects[i].transform.position = Vector3.Lerp(originalPositions[i], targetPositions[i], t);
+            }
+
+            yield return null;
+        }
+
+        // Ensure final positions are exact
+        for (int i = 0; i < 4; i++)
+        {
+            cachetObjects[i].transform.position = targetPositions[i];
+        }
+
+        // Update the mapping
+        currentMapping = newMapping;
+
+        // Log the new mapping
+        Debug.Log("New mapping - Up: " + colorNames[currentMapping[0]] +
+                 ", Down: " + colorNames[currentMapping[1]] +
+                 ", Left: " + colorNames[currentMapping[2]] +
+                 ", Right: " + colorNames[currentMapping[3]]);
+
+        // NEW: Resume the timer after shuffle
+        ResumeTimer();
+
+        isShuffling = false;
     }
 
+    // NEW: Timer pause methods
     void PauseTimer()
     {
         if (!timerPaused)
         {
             timerPaused = true;
-            Debug.Log("Timer paused (shuffle)");
+            Debug.Log("Timer paused during shuffle animation");
         }
     }
 
@@ -544,33 +479,234 @@ public class PaperSortingGame : MonoBehaviour
         if (timerPaused)
         {
             timerPaused = false;
-            pausedTime += shuffleAnimationDuration;
-            Debug.Log("Timer resumed");
+            pausedTime += shuffleAnimationDuration; // Add the shuffle duration to paused time
+            Debug.Log("Timer resumed after shuffle animation");
         }
     }
 
-    void ResetCachetPositions()
+    // NEW: Public method to get current score
+    public int GetScore()
     {
-        for (int i = 0; i < 4; i++)
+        return score;
+    }
+
+    // NEW: Public method to reset score (if needed)
+    public void ResetScore()
+    {
+        score = 0;
+        Debug.Log("Score reset to: " + score);
+    }
+
+    string GetPositionName(Vector3 position)
+    {
+        float minDistance = float.MaxValue;
+        string positionName = "Unknown";
+
+        for (int i = 0; i < cachetPositions.Length; i++)
         {
-            if (cachetObjects[i] != null && cachetPositions[i] != null)
-                cachetObjects[i].transform.position = cachetPositions[i].position;
+            float distance = Vector3.Distance(position, cachetPositions[i].position);
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                positionName = GetKeyName(i);
+            }
+        }
+
+        return positionName;
+    }
+
+    string GetKeyName(int keyIndex)
+    {
+        switch (keyIndex)
+        {
+            case 0: return "Up";
+            case 1: return "Down";
+            case 2: return "Left";
+            case 3: return "Right";
+            default: return "Unknown";
         }
     }
 
-    /* -------------------------------------------------
-       DEBUG GUI (optionnel)
-       -------------------------------------------------*/
-    void OnGUI()
+    IEnumerator PlayFinalBossAnimationThenShowJumpscare()
+{
+    isBossAnimating = true;
+
+    // Wait for final anger animation to play (Anger4)
+    if (BossAnimator != null)
     {
-        GUI.Label(new Rect(10, 10, 400, 20), $"Paper Speed: {paperSpeed:F2}");
-        GUI.Label(new Rect(10, 30, 400, 20), $"Time Limit : {timeLimit:F2}");
-        GUI.Label(new Rect(10, 50, 400, 20), $"Stamp Speed: {stampAnimationSpeed:F2}");
-        GUI.Label(new Rect(10, 70, 400, 20), $"Shuffle Dur.: {shuffleAnimationDuration:F2}");
+        string expectedStateName = "Anger4";
+
+        // Wait for animation state to begin
+        while (!BossAnimator.GetCurrentAnimatorStateInfo(0).IsName(expectedStateName))
+            yield return null;
+
+        float animLength = BossAnimator.GetCurrentAnimatorStateInfo(0).length;
+        yield return new WaitForSeconds(animLength);
     }
 
-    string GetKeyName(int i) => i switch
+    isBossAnimating = false;
+
+    // 🎃 Trigger jumpscare from UIManager
+    if (GameManager.Instance.uiManager != null)
     {
-        0 => "Up", 1 => "Down", 2 => "Left", 3 => "Right", _ => "Unknown"
-    };
+        GameManager.Instance.uiManager.ShowJumpscare(); // Shows the image only
+    }
+
+    // Then end the game
+    GameOver();
+}
+
+    void IncreaseAnger(string reason)
+{
+    angerLevel = Mathf.Clamp(angerLevel + 1, 0, maxAngerLevel);
+    Debug.Log(reason + " Anger Level: " + angerLevel + "/" + maxAngerLevel);
+
+    if (BossAnimator != null)
+    {
+        switch (angerLevel)
+        {
+            case 1: BossAnimator.SetTrigger("Anger1"); break;
+            case 2: BossAnimator.SetTrigger("Anger2"); break;
+            case 3: BossAnimator.SetTrigger("Anger3"); break;
+            case 4: BossAnimator.SetTrigger("Anger4"); break;
+        }
+    }
+
+    UpdateBossColor();
+    uiManager.UpdateAngerBar(angerLevel, maxAngerLevel);
+
+    if (angerLevel >= maxAngerLevel)
+        {
+            StartCoroutine(PlayFinalBossAnimationThenShowJumpscare());
+        }
+}
+
+    void UpdateBossColor()
+    {
+        if (bossCylinder != null)
+        {
+            Renderer bossRenderer = bossCylinder.GetComponent<Renderer>();
+            if (bossRenderer != null)
+            {
+                bossRenderer.material.color = angerColors[angerLevel];
+            }
+        }
+    }
+
+    void GameOver()
+{
+    gameOver = true;
+    Debug.Log("GAME OVER! Maximum anger level reached! Final Score: " + score);
+
+    foreach (GameObject paper in activePapers)
+    {
+        if (paper != null)
+            Destroy(paper);
+    }
+    activePapers.Clear();
+
+    // ✅ Update score in GameManager so UIManager can access it
+    GameManager.Instance.currentScore = score;
+
+    // ✅ Show final screen
+    uiManager.ShowGameOverScreen();
+}
+
+
+    IEnumerator WaitForBossAnimationThenShuffleAndSpawn()
+    {
+        isBossAnimating = true;
+
+        if (BossAnimator != null)
+        {
+            string triggerName = "";
+            string expectedStateName = "";
+
+            switch (angerLevel)
+            {
+                case 1: triggerName = "Anger1"; expectedStateName = "Anger1"; break;
+                case 2: triggerName = "Anger2"; expectedStateName = "Anger2"; break;
+                case 3: triggerName = "Anger3"; expectedStateName = "Anger3"; break;
+                case 4: triggerName = "Anger4"; expectedStateName = "Anger4"; break;
+            }
+
+            BossAnimator.SetTrigger(triggerName);
+            yield return null;
+
+            // Wait for boss animation to start
+            while (!BossAnimator.GetCurrentAnimatorStateInfo(0).IsName(expectedStateName))
+                yield return null;
+
+            float animLength = BossAnimator.GetCurrentAnimatorStateInfo(0).length;
+            yield return new WaitForSeconds(animLength);
+        }
+
+        isBossAnimating = false;
+
+        // Shuffle then spawn a paper
+        yield return StartCoroutine(ShuffleCachets());
+
+        // After shuffling is done and boss is calm, spawn the next paper
+        if (!gameOver)
+        {
+            SpawnPaper(); // manually spawn one paper immediately
+        }
+    }
+
+
+
+
+    void MovePapers()
+    {
+        for (int i = activePapers.Count - 1; i >= 0; i--)
+        {
+            if (activePapers[i] == null)
+            {
+                activePapers.RemoveAt(i);
+                continue;
+            }
+
+            GameObject paper = activePapers[i];
+            PaperData paperData = paper.GetComponent<PaperData>();
+
+            if (paperData.isMoving)
+            {
+                paperData.speed = paperSpeed;
+                // Move paper towards destination
+                paper.transform.position = Vector3.MoveTowards(
+                    paper.transform.position,
+                    paperData.targetPosition,
+                    paperData.speed * Time.deltaTime
+
+
+                );
+                paper.transform.rotation = Quaternion.RotateTowards(
+    paper.transform.rotation,
+    paperData.targetRotation,
+                 360 * Time.deltaTime // Degrees per second — adjust for smoothness
+);
+
+                // Check if paper reached destination
+                if (Vector3.Distance(paper.transform.position, paperData.targetPosition) < 0.1f)
+                {
+                    paperData.isMoving = false;
+                    paperWaitingForInput = true;
+                    paperReachedTime = Time.time;
+                    pausedTime = 0f; // Reset paused time for new paper
+
+                    Debug.Log("Paper reached destination! Current mapping - Up: " + colorNames[currentMapping[0]] +
+                             ", Down: " + colorNames[currentMapping[1]] +
+                             ", Left: " + colorNames[currentMapping[2]] +
+                             ", Right: " + colorNames[currentMapping[3]]);
+
+                    // Enable physics when it reaches destination
+                    Rigidbody rb = paper.GetComponent<Rigidbody>();
+                    if (rb != null)
+                    {
+                        rb.isKinematic = false;
+                    }
+                }
+            }
+        }
+    }
 }

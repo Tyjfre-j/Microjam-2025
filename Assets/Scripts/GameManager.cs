@@ -1,161 +1,113 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine;
-using UnityEngine.InputSystem; // 👈 required for new input system
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
-    
-    [Header("Game State")]
+
+    [Header("State")]
     public bool isGameActive = false;
     public bool isGamePaused = false;
-    
-    [Header("References")]
-    public PaperSortingGame paperSortingGame;
-    public UIManager uiManager;
-    
-    [Header("Score System")]
+
+    [Header("Score")]
     public int currentScore = 0;
-    public int highScore = 0;
-    
-    private const string HIGH_SCORE_KEY = "HighScore";
-    
+
+    [Header("Reference to UIManager")]
+    public UIManager uiManager;
+
+    private const string HighScoreKey = "HighScore"; // Key to store high score in PlayerPrefs
+
     void Awake()
     {
         // Singleton pattern
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            DontDestroyOnLoad(gameObject); // Keep GameManager between scenes
         }
         else
         {
             Destroy(gameObject);
         }
     }
-    
-    void Start()
-    {
-        LoadHighScore();
-        ShowMainMenu();
-    }
-    
+
     public void StartGame()
     {
         isGameActive = true;
+        isGamePaused = false;
         currentScore = 0;
-        
-        if (paperSortingGame != null)
-        {
-            paperSortingGame.enabled = true;
-            paperSortingGame.ResetGame();
-        }
-        
-        if (uiManager != null)
-        {
-            uiManager.ShowGameUI();
-        }
+
+        Time.timeScale = 1f;
+        uiManager.ShowGameUI();
     }
-    
+
     public void PauseGame()
     {
         isGamePaused = true;
         Time.timeScale = 0f;
-        
-        if (uiManager != null)
-        {
-            uiManager.ShowPauseMenu();
-        }
+        uiManager.ShowPauseMenu();
     }
-    
+
     public void ResumeGame()
     {
         isGamePaused = false;
         Time.timeScale = 1f;
-        
-        if (uiManager != null)
-        {
-            uiManager.ShowGameUI();
-        }
+        uiManager.ShowGameUI();
     }
-    
-    public void GameOver()
-    {
-        isGameActive = false;
-        
-        // Check if new high score
-        if (currentScore > highScore)
-        {
-            highScore = currentScore;
-            SaveHighScore();
-        }
-        
-        if (uiManager != null)
-        {
-            uiManager.ShowGameOverScreen();
-        }
-    }
-    
+
     public void RestartGame()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
-    
+
     public void ShowMainMenu()
     {
         isGameActive = false;
+        isGamePaused = false;
         Time.timeScale = 1f;
-        
-        if (paperSortingGame != null)
-        {
-            paperSortingGame.enabled = false;
-        }
-        
-        if (uiManager != null)
-        {
-            uiManager.ShowMainMenu();
-        }
+        uiManager.ShowMainMenu();
     }
-    
+
     public void QuitGame()
     {
+        Debug.Log("Quit Game");
         Application.Quit();
     }
-    
-    public void UpdateScore(int newScore)
+
+    public void EndGame()
     {
-        currentScore = newScore;
-        
-        if (uiManager != null)
+        isGameActive = false;
+        Time.timeScale = 0f;
+
+        SaveHighScore(); // ✅ Save if currentScore > existing high score
+
+        uiManager.ShowGameOverScreen();
+    }
+
+    // ✅ Save high score using PlayerPrefs
+    public void SaveHighScore()
+    {
+        int storedHighScore = PlayerPrefs.GetInt(HighScoreKey, 0);
+        if (currentScore > storedHighScore)
         {
-            uiManager.UpdateScore(currentScore);
+            PlayerPrefs.SetInt(HighScoreKey, currentScore);
+            PlayerPrefs.Save();
+            Debug.Log("🎉 New high score saved: " + currentScore);
         }
     }
-    
-    public void UpdateAngerLevel(int angerLevel, int maxAngerLevel)
-    {
-        if (uiManager != null)
-        {
-            uiManager.UpdateAngerBar(angerLevel, maxAngerLevel);
-        }
-    }
-    
-    void LoadHighScore()
-    {
-        highScore = PlayerPrefs.GetInt(HIGH_SCORE_KEY, 0);
-    }
-    
-    void SaveHighScore()
-    {
-        PlayerPrefs.SetInt(HIGH_SCORE_KEY, highScore);
-        PlayerPrefs.Save();
-    }
-    
+
+    // ✅ Get high score from PlayerPrefs
     public int GetHighScore()
     {
-        return highScore;
+        return PlayerPrefs.GetInt(HighScoreKey, 0);
+    }
+
+    // Optional: Reset high score (for debugging or menu button)
+    public void ResetHighScore()
+    {
+        PlayerPrefs.DeleteKey(HighScoreKey);
+        PlayerPrefs.Save();
+        Debug.Log("High score reset.");
     }
 }

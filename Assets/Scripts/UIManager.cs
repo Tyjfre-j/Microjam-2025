@@ -2,15 +2,23 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.InputSystem;   // ← new Input System API
+using System.Collections;           // ← add this
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using UnityEngine.InputSystem;
 
 public class UIManager : MonoBehaviour
 {
+    [Header("Jumpscare")]
+public GameObject jumpscareImage;
     /* ---------------------- UI PANELS ---------------------- */
     [Header("UI Panels")]
     public GameObject mainMenuPanel;
     public GameObject gameUIPanel;
     public GameObject pauseMenuPanel;
     public GameObject gameOverPanel;
+    
 
     /* ------------------- MAIN MENU ELEMENTS ---------------- */
     [Header("Main Menu Elements")]
@@ -91,6 +99,17 @@ public class UIManager : MonoBehaviour
             UpdateHighScoreDisplay();
         }
     }
+    public void ShowJumpscare()
+{
+    if (jumpscareImage) jumpscareImage.SetActive(true);
+    StartCoroutine(HideJumpscareAfterDelay());
+}
+
+IEnumerator HideJumpscareAfterDelay()
+{
+    yield return new WaitForSeconds(1.5f); // Duration of jumpscare
+    if (jumpscareImage) jumpscareImage.SetActive(false);
+}
 
     /* ---------------------- GAME UI ------------------------ */
     public void ShowGameUI()
@@ -179,6 +198,7 @@ public class UIManager : MonoBehaviour
         if (highScoreText)
             highScoreText.text = "High Score: " + GameManager.Instance.GetHighScore();
     }
+    
 
     /* -------------------- ESC KEY HANDLER ------------------ */
     void Update()
