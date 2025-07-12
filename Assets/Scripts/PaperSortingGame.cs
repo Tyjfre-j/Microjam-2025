@@ -41,9 +41,12 @@ public class PaperSortingGame : MonoBehaviour
 
     [Header("Animation Settings")]
     public float stampAnimationSpeed = 1f; // Starting stamp speed
+    public Animator BossAnimator;
 
     private float gameTimeElapsed = 0f;
     private float difficultyTimer = 0f;
+    private bool isBossAnimating = false;
+
 
     // Key mappings: Up=Red, Down=Blue, Left=Green, Right=Yellow (initial)
     private string[] colorNames = new string[4] { "Red", "Blue", "Green", "Yellow" };
@@ -75,7 +78,7 @@ public class PaperSortingGame : MonoBehaviour
 
     private GameObject currentStampedPaper; // Holds the paper to be destroyed by animation
     private bool waitingForStampAnimation = false;
-    private bool pendingShuffleAfterStamp = false;
+    
 
 
     void Start()
@@ -165,7 +168,8 @@ public class PaperSortingGame : MonoBehaviour
 
     void HandleInput()
     {
-        if (keyboard == null || !paperWaitingForInput || waitingForStampAnimation) return;
+        if (keyboard == null || !paperWaitingForInput || waitingForStampAnimation || isShuffling || isBossAnimating) return;
+
 
 
         if (keyboard.upArrowKey.wasPressedThisFrame)
@@ -234,7 +238,7 @@ public class PaperSortingGame : MonoBehaviour
                 currentStampedPaper = targetPaper;
                 paperWaitingForInput = false;
                 waitingForStampAnimation = true;
-                pendingShuffleAfterStamp = false; // No shuffle needed
+                
             }
             else
             {
@@ -242,13 +246,17 @@ public class PaperSortingGame : MonoBehaviour
                 string keyName = GetKeyName(keyIndex);
                 Debug.Log("Wrong color! Paper is " + colorNames[paperData.colorIndex] + " but you pressed " + keyName);
 
-                correctCacheStreak = 0; // ❗ reset streak on error
+                correctCacheStreak = 0;
 
                 activePapers.Remove(targetPaper);
-                currentStampedPaper = targetPaper; // still delay destruction
+                currentStampedPaper = targetPaper;
                 paperWaitingForInput = false;
                 waitingForStampAnimation = true;
-                pendingShuffleAfterStamp = true; // ❗ Mark for shuffle after stamp
+
+                // 👇 Trigger boss animation now and wait for it before shuffle
+                IncreaseAnger("Wrong key pressed!");
+                StartCoroutine(WaitForBossAnimationThenShuffle());
+
             }
 
 
@@ -273,13 +281,7 @@ public class PaperSortingGame : MonoBehaviour
             paperWaitingForInput = false;
             waitingForStampAnimation = false;
 
-            if (pendingShuffleAfterStamp)
-            {
-                pendingShuffleAfterStamp = false;
-                IncreaseAnger("Wrong key pressed!");
-                StartCoroutine(ShuffleCachets());
-            }
-
+           
             Debug.Log("STAMP HIT COMPLETE! Score: " + score);
             handAnimator.speed = 1f;
 
@@ -499,8 +501,27 @@ public class PaperSortingGame : MonoBehaviour
 
     void IncreaseAnger(string reason)
     {
-        angerLevel++;
+        angerLevel = Mathf.Clamp(angerLevel + 1, 0, maxAngerLevel);
+
         Debug.Log(reason + " Anger Level: " + angerLevel + "/" + maxAngerLevel);
+        if (BossAnimator != null)
+        {
+            switch (angerLevel)
+            {
+                case 1:
+                    BossAnimator.SetTrigger("Anger1");
+                    break;
+                case 2:
+                    BossAnimator.SetTrigger("Anger2");
+                    break;
+                case 3:
+                    BossAnimator.SetTrigger("Anger3");
+                    break;
+                case 4:
+                    BossAnimator.SetTrigger("Anger4");
+                    break;
+            }
+        }
 
         UpdateBossColor();
 
@@ -537,6 +558,54 @@ public class PaperSortingGame : MonoBehaviour
         }
         activePapers.Clear();
     }
+
+
+
+    IEnumerator WaitForBossAnimationThenShuffle()
+    {
+        isBossAnimating = true;  // 👈 Block input during boss animation
+
+        if (BossAnimator != null)
+        {
+            string triggerName = "";
+            string expectedStateName = "";
+
+            switch (angerLevel)
+            {
+                case 1:
+                    triggerName = "Anger1";
+                    expectedStateName = "Anger1";
+                    break;
+                case 2:
+                    triggerName = "Anger2";
+                    expectedStateName = "Anger2";
+                    break;
+                case 3:
+                    triggerName = "Anger3";
+                    expectedStateName = "Anger3";
+                    break;
+                case 4:
+                    triggerName = "Anger4";
+                    expectedStateName = "Anger4";
+                    break;
+            }
+
+            BossAnimator.SetTrigger(triggerName);
+            yield return null;
+
+            while (!BossAnimator.GetCurrentAnimatorStateInfo(0).IsName(expectedStateName))
+                yield return null;
+
+            float animLength = BossAnimator.GetCurrentAnimatorStateInfo(0).length;
+            yield return new WaitForSeconds(animLength);
+        }
+
+        isBossAnimating = false; // ✅ Unblock input AFTER boss animation
+
+        yield return StartCoroutine(ShuffleCachets()); // Shuffling already blocks input via isShuffling
+    }
+
+
 
     void MovePapers()
     {
@@ -592,3 +661,4 @@ public class PaperSortingGame : MonoBehaviour
         }
     }
 }
+
